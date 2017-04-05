@@ -1,4 +1,5 @@
 # Issue #256
+
 https://github.com/Pylons/webob/issues/256
 
 
@@ -12,5 +13,6 @@ support."
 
 
 ## RFCs
-RFC 7231
-RFC 4647
+
+* RFC 7231
+* RFC 4647

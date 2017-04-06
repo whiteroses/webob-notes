@@ -57,3 +57,17 @@ Not directly relevant to issue, but background on proactive negotiation.
 * > "A sender of qvalue MUST NOT generate more than three digits after the
   decimal point. User configuration of these values ought to be limited in the
   same fashion."
+
+
+##### 5.3.2.  Accept
+
+  Accept = #( media-range [ accept-params ] )
+
+  media-range    = ( "*/*"
+                   / ( type "/" "*" )
+                   / ( type "/" subtype )
+                   ) *( OWS ";" OWS parameter )
+  accept-params  = weight *( accept-ext )
+  accept-ext = OWS ";" OWS token [ "=" ( token / quoted-string ) ]
+
+* Used by user agents to specify response media types that are acceptable.

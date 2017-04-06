@@ -3,6 +3,12 @@
 https://github.com/Pylons/webob/issues/256
 
 
+    >>> from webob import Request
+    >>> r = Request.blank("/", accept_language="en-GB, en;q=0.8")
+    >>> r.accept_language.best_match(offers=["en", "en-GB"])
+    'en'
+
+
 ## To-dos
 
 * RFC 7231, Section 5.3.1, on quality values:

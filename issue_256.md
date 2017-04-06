@@ -50,9 +50,11 @@ Not directly relevant to issue, but background on proactive negotiation.
 
 ##### 5.3.1.  Quality Values
 
-<pre>weight = OWS ";" OWS "q=" qvalue
+<pre>
+weight = OWS ";" OWS "q=" qvalue
 qvalue = ( "0" [ "." 0*3DIGIT ] )
-       / ( "1" [ "." 0*3("0") ] )</pre>
+       / ( "1" [ "." 0*3("0") ] )
+</pre>
 
 * Common parameter named "q" (case-insensitive) for many of the request header
   fields for proactive negotiation. Referred to as "quality value", or

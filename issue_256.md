@@ -3,6 +3,20 @@
 https://github.com/Pylons/webob/issues/256
 
 
+## To-dos
+
+* RFC 7231, Section 5.3.1, on quality values:
+	* "The same parameter name is often used within server configurations
+	  to assign a weight to the relative quality of the various
+	  representations that can be selected for a resource." Related to
+	  `server_quality` in `.best_match()`?
+	* 'a value of 0 means "not acceptable"'. Is this information important?
+	  Is this information sometimes dropped by the current implementation?
+	* Are incoming qvalues validated to check that they are not more than
+	  three digits? Should they be? Do the use of floats and the resulting
+	  floating point errors matter?
+
+
 ## Related GSoC project
 
 https://github.com/Pylons/pyramid/wiki/GSoC-2017
@@ -16,3 +30,26 @@ support."
 
 * RFC 7231
 * RFC 4647
+
+
+### RFC 7231
+
+#### Section 3.4.1.  Representations > Content Negotiation > Proactive Negotiation
+
+Not directly relevant to issue, but background on proactive negotiation.
+
+
+#### Section 5.3.  Request Header Fields > Content Negotiation
+
+##### 5.3.1.  Quality Values
+
+* Common parameter named "q" (case-insensitive) for many of the request header
+  fields for proactive negotiation. Referred to as "quality value", or
+  "qvalue"; is a relative weight.
+* > "The same parameter name is often used within server configurations to
+  assign a weight to the relative quality of the various representations that
+  can be selected for a resource."
+* > 'The weight is normalized to a real number in the range 0 through 1, where 0.001 is the least preferred and 1 is the most preferred; a value of 0 means "not acceptable". If no "q" parameter is present, the default weight is 1.'
+* > "A sender of qvalue MUST NOT generate more than three digits after the
+  decimal point. User configuration of these values ought to be limited in the
+  same fashion."

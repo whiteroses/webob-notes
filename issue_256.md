@@ -15,6 +15,7 @@ https://github.com/Pylons/webob/issues/256
 	* Are incoming qvalues validated to check that they are not more than
 	  three digits? Should they be? Do the use of floats and the resulting
 	  floating point errors matter?
+* In `Accept` class, why is `.parse()` a staticmethod?
 
 
 ## Related GSoC project

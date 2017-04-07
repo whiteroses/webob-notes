@@ -8,10 +8,12 @@ https://github.com/Pylons/webob/issues/256
     >>> r.accept_language.best_match(offers=["en", "en-GB"])
     'en'
 
+We would expect the best match to be "en-GB".
+
 
 ## To-dos
 
-* RFC 7231, Section 5.3.1, on quality values:
+* RFC7231, Section 5.3.1, on quality values:
 	* "The same parameter name is often used within server configurations
 	  to assign a weight to the relative quality of the various
 	  representations that can be selected for a resource." Related to
@@ -21,7 +23,34 @@ https://github.com/Pylons/webob/issues/256
 	* Are incoming qvalues validated to check that they are not more than
 	  three digits? Should they be? Do the use of floats and the resulting
 	  floating point errors matter?
+* RFC7231, Section 5.3.5:
+	* "Some recipients treat the order in which language tags are listed as
+	  an indication of descending priority, particularly for tags that are
+	  assigned equal quality values (no value is the same as q=1). However,
+	  this behaviour cannot be relied upon. For consistency and to maximize
+	  interoperability, many user agents assign each language tag a unique
+	  quality value while also listing them in order of decreasing quality."
+	  `__iter__` appears to be sort `self._parsed_nonzero` by `q` -- but
+	  should it be `_nonzero`? 0 means "not acceptable", but when we get a
+	  `list()` of the header attribute, the q=0 information is just
+	  dropped? (Noticed that this information is not dropped in `__str__`
+	  or `.quality()`, which use `self._parsed`.)
+	  (Also, does `sorted` keep original parsed order for items with same
+	  qvalue?)
+	* Read Section 14.4 of [RFC2616]. Is "Basic Filtering" scheme the only
+	  one defined for HTTP in RFC2616, and what WebOb has implemented? (But
+	  it doesn't look like "Basic Filtering", or any filtering?)
+
+* In `.best_match` docstring: "If two matches have equal weight, then the one
+  that shows up first in the `offers` list will be returned." Why follow the
+  `offers` order instead of the parsed order?
 * In `Accept` class, why is `.parse()` a staticmethod?
+* The way `.parse()` is used, what is the advantage to it being a generator?
+* Is there any reason why the four Accept headers are based on the same class?
+  Because it seems to make it harder to reason out the small differences
+  between the four headers, where they need to be handled differently, and
+  where shared code may be causing bugs. Might it be clearer to use composition
+  instead of inheritance?
 
 
 ## Related GSoC project
@@ -35,11 +64,17 @@ support."
 
 ## RFCs
 
-* RFC 7231
-* RFC 4647
+* RFC7231
+* RFC4647
+* RFC5646
+* RFC2616 (obsolete, but may explain previous implementation decisions)
 
+### RFC7231
 
-### RFC 7231
+#### Section 3.1.3.1  Audience Language > Language Tags
+
+* Defined in RFC5646.
+
 
 #### Section 3.4.1.  Representations > Content Negotiation > Proactive Negotiation
 
@@ -82,3 +117,55 @@ accept-ext = OWS ";" OWS token [ "=" ( token / quoted-string ) ]
 </pre>
 
 * Used by user agents to specify response media types that are acceptable.
+
+
+##### 5.3.5  Accept-Language
+
+<pre>
+Accept-Language = 1#( language-range [ weight ] )
+language-range  =
+          <language-range, see [RFC4647], Section 2.1>
+</pre>
+
+* Used by user agents to indicate the set of natural languages that are
+  preferred in the response.
+* Language tags are defined in Section 3.1.3.1.
+* Each language range can be given an associated quality value representing an
+  estimate of the user's preference for the languages specified by that range,
+  as defined in Section 5.3.1.
+* The example here involving `da`, `en-gb` and `en` here is confusing (so I
+  won't quote it here): it doesn't make clear that British English would be
+  preferred to English, which I believe is the intended meaning.
+* A request without any `Accept-Language` header field implies that the user
+  agent will accept any language in response.
+* If the header field is present in a request and none of the available
+  representations for the response have a matching language tag, the origin
+  server can either disregard the header field by treating the response as if
+  it is not subject to content negotiation, or honour the header field by
+  sending a 406 (Not Acceptable) response. However, the latter is not
+  encouraged as doing so can prevent users from accessing content that they
+  might be able to use (with translation software, for example).
+* Some recipients treat the order in which language tags are listed as an
+  indication of descending priority, particularly for tags that are assigned
+  equal quality values (no value is the same as q=1). However, this behaviour
+  cannot be relied upon. For consistency and to maximize interoperability, many
+  user agents assign each language tag a unique quality value while also
+  listing them in order of decreasing quality.
+* For matching, Section 3 of RFC4647 defines several matching schemes.
+  Implementations can offer the most appropriate matching scheme for their
+  requirements. [Unclear if they mean the most appropriate matching scheme of
+  the three in RFC4647, or any appropriate scheme.] The "Basic Filtering"
+  scheme ([RFC4647], Section 3.3.1) is identical to the matching scheme that
+  was previous defined for HTTP in Section 14.4 of [RFC2616].
+
+
+### RFC2616
+
+##### 14.4 Accept Language
+
+* A language-range matches a language-tag if it exactly equals the tag, or if
+  it exactly equals a prefix of the tag such that the first tag character
+  following the prefix is "-".
+  [This is the same as "Basic Filtering" in RFC4647, except the mention of the
+  comparison being case-insensitive in 4647. There's also a helpful example in
+  RFC4647.]

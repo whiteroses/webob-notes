@@ -22,7 +22,12 @@ We would expect the best match to be "en-GB".
 	  Is this information sometimes dropped by the current implementation?
 	* Are incoming qvalues validated to check that they are not more than
 	  three digits? Should they be? Do the use of floats and the resulting
-	  floating point errors matter?
+	  floating point errors matter? Note: RFC2616, Section 3.9 Quality
+	  Values: 'HTTP content negotiation (section 12) uses short "floating
+	  point" numbers to indicate the relative importance..." But also:
+	  "HTTP/1.1 applications MUST NOT generate more than three digits after
+	  the decimal point. User configuration of these values SHOULD also be
+	  limited in this fashion.'
 * RFC7231, Section 5.3.5:
 	* "Some recipients treat the order in which language tags are listed as
 	  an indication of descending priority, particularly for tags that are
@@ -39,7 +44,13 @@ We would expect the best match to be "en-GB".
 	  qvalue?)
 	* Read Section 14.4 of [RFC2616]. Is "Basic Filtering" scheme the only
 	  one defined for HTTP in RFC2616, and what WebOb has implemented? (But
-	  it doesn't look like "Basic Filtering", or any filtering?)
+	  what WebOb has implemented doesn't look like "Basic Filtering", or
+	  any filtering, since it only returns one single item?)
+	* Compare the "Note:" at the end of the section and its example of the
+	  user's assumption on selecting "en-gb", with the three matching
+	  schemes in RFC4647. If I remember right, the filtering schemes work
+	  one way, and lookup works the opposite way. Which one(s) sound like
+	  the one in this example?
 
 * In `.best_match` docstring: "If two matches have equal weight, then the one
   that shows up first in the `offers` list will be returned." Why follow the
@@ -157,11 +168,18 @@ language-range  =
   the three in RFC4647, or any appropriate scheme.] The "Basic Filtering"
   scheme ([RFC4647], Section 3.3.1) is identical to the matching scheme that
   was previous defined for HTTP in Section 14.4 of [RFC2616].
+* In the "Note:" at the end of the section: 'For example, users might assume
+  that on selecting "en-gb", they will be served any kind of English document
+  if British English is not available. A user agent might suggest, in such a
+  case, to add "en" to the list for better matching behavior.' This does not
+  make clear whether users should not make that assumption because the chosen
+  matching scheme (out of the three?) implemented might not work that way, or
+  whether *none* of the matching schemes for this header should work that way.
 
 
 ### RFC2616
 
-##### 14.4 Accept Language
+##### 14.4 Accept-Language
 
 * A language-range matches a language-tag if it exactly equals the tag, or if
   it exactly equals a prefix of the tag such that the first tag character
@@ -169,3 +187,14 @@ language-range  =
   [This is the same as "Basic Filtering" in RFC4647, except the mention of the
   comparison being case-insensitive in 4647. There's also a helpful example in
   RFC4647.]
+* The special range "\*", if present in the Accept-Language field, matches every
+  tag not matched by any other range present in the Accept-Language field.
+  [Does that basically says "Use whatever language you like"?]
+* The "Note:" on prefix matching rule is confusing, in that the section seems
+  to specify one approach, but doesn't make clear whether the intention is for
+  us to drop that approach if the approach doesn't appear appropriate, e.g.
+  when a use understands a language with a certain tag, but not another
+  language with another tag for which this tag is a prefix. (I believe this is
+  possible -- check RFC4646?)
+* It's completely unclear what the language quality factor is. Not mentioned in
+  RFC7231 or RFC4647.

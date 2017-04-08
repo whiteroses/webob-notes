@@ -51,6 +51,17 @@ We would expect the best match to be "en-GB".
 	  schemes in RFC4647. If I remember right, the filtering schemes work
 	  one way, and lookup works the opposite way. Which one(s) sound like
 	  the one in this example?
+* RFC5646, Section 4.2:
+	* "Languages that begin with the same sequence of subtags are NOT
+	  guaranteed to be mutually intelligible." So a matching scheme that
+	  matches a language range with a language tag that is a prefix of the
+	  language range should not be implemented as the default scheme? (But
+	  rather as an option?)
+* RFC5646, Section 4.3:
+	* "In some applications, a single content item might best be associated
+	  with more than one language tag. Examples of such a usage
+	  include:..." Examples of use cases where `.best_match()` does not
+	  suffice?
 
 * In `.best_match` docstring: "If two matches have equal weight, then the one
   that shows up first in the `offers` list will be returned." Why follow the
@@ -78,6 +89,7 @@ support."
 * RFC7231
 * RFC4647
 * RFC5646
+* RFC4646 (obsoleted by 5646)
 * RFC2616 (obsolete, but may explain previous implementation decisions)
 
 ### RFC7231
@@ -198,3 +210,23 @@ language-range  =
   possible -- check RFC4646?)
 * It's completely unclear what the language quality factor is. Not mentioned in
   RFC7231 or RFC4647.
+
+
+### RFC5646
+
+##### 4.2.  Meaning of the Language Tag
+
+> Language tags are related when they contain a similar sequence of subtags.  For
+example, if a language tag B contains language tag A as a prefix, then B is
+typically "narrower" or "more specific" than A.  Thus, "zh-Hant-TW" is more
+specific than "zh-Hant".
+
+> This relationship is not guaranteed in all cases: specifically, languages that
+begin with the same sequence of subtags are NOT guaranteed to be mutually
+intelligible, although they might be.  For example, the tag "az" shares a
+prefix with both "az-Latn" (Azerbaijani written using the Latin script) and
+"az-Cyrl" (Azerbaijani written using the Cyrillic script).  A person fluent in
+one script might not be able to read the other, even though the linguistic
+content (e.g., what would be heard if both texts were read aloud) might be
+identical.  Content tagged as "az" most probably is written in just one script
+and thus might not be intelligible to a reader familiar with the other script.

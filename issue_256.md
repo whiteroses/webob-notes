@@ -467,6 +467,7 @@ used in China, where the Simplified script is predominant).  Documentation on
 how the ranges or tags are altered, prioritized, or compared in the subsequent
 match in such an implementation will assist users in making these types of
 configuration choices. 
+</blockquote>
 
 ##### 3.3  Filtering
 

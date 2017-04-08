@@ -167,6 +167,9 @@ user's priority list, but I don't see any support for that in the RFCs.
 	* Details on Lookup, including algorithm and examples.
 	* This is the matching scheme that would most closely matches a
 	  `.best_match()`.
+* Section 4.1:
+	* Includes an example of how a user might use both filtering and
+	  lookup.
 
 
 * In `.best_match` docstring: "If two matches have equal weight, then the one
@@ -583,6 +586,15 @@ The first suggestion in the next paragraph may be an option too:
 
 > For example, an implementation could map the extended language ranges to basic
 ranges.
+
+###### 3.4.1.  Default Values
+
+Details on implementation of default values in Lookup.
+
+##### 4.1.  Choosing Language Ranges
+
+Includes an example of how a user might use both filtering and lookup: "Whether
+a subtag adds..."
 
 
 ### RFC3282

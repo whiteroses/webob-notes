@@ -14,7 +14,9 @@ RFC4647, Section 2.3:
 > 'A speaker of Breton in France, for example, can specify "br" followed by "fr",
 meaning that if Breton is available, it is preferred, but otherwise French is
 the best alternative.'
+
 and really, the whole idea of a priority list.
+
 Unless the ordering in the server's offers are seen as more important than the
 user's priority list, but I don't see any support for this in the RFCs.
 

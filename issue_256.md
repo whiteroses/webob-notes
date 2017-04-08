@@ -9,6 +9,14 @@ https://github.com/Pylons/webob/issues/256
     'en'
 
 We would expect the best match to be "en-GB".
+Returning 'en' here would not be in line with the sense given by the example in
+RFC4647, Section 2.3:
+> 'A speaker of Breton in France, for example, can specify "br" followed by "fr",
+meaning that if Breton is available, it is preferred, but otherwise French is
+the best alternative.'
+and really, the whole idea of a priority list.
+Unless the ordering in the server's offers are seen as more important than the
+user's priority list, but I don't see any support for this in the RFCs.
 
 
 ## To-dos
@@ -62,6 +70,15 @@ We would expect the best match to be "en-GB".
 	  with more than one language tag. Examples of such a usage
 	  include:..." Examples of use cases where `.best_match()` does not
 	  suffice?
+* RFC4647, Secion 2.2:
+	* "...wildcards outside the first position are ignored by Extended
+	  Filtering (see Section 3.2.2)."
+	* "The use or absence of one or more wildcards cannot be taken to imply
+	  that a certain number of subtags will appear in the matching set of
+	  language tags." Not sure what this means. I think it follows from the
+	  way Extended Filtering ignores wildcards outside the first position,
+	  where it drops those positions and shifts all following subtags up a
+	  position? (Check how Extended Filtering works.)
 
 * In `.best_match` docstring: "If two matches have equal weight, then the one
   that shows up first in the `offers` list will be returned." Why follow the
@@ -88,6 +105,7 @@ support."
 
 * RFC7231
 * RFC4647
+* RFC3282
 * RFC5646
 * RFC4646 (obsoleted by 5646)
 * RFC2616 (obsolete, but may explain previous implementation decisions)
@@ -230,3 +248,130 @@ one script might not be able to read the other, even though the linguistic
 content (e.g., what would be heard if both texts were read aloud) might be
 identical.  Content tagged as "az" most probably is written in just one script
 and thus might not be intelligible to a reader familiar with the other script.
+
+
+### RFC4647
+
+#### 2.  The Language Range
+
+> There are different types of language range, whose specific attributes vary
+according to their application.  Language ranges are similar to language tags:
+they consist of a sequence of subtags separated by hyphens.  In a language
+range, each subtag MUST either be a sequence of ASCII alphanumeric characters
+or the single character '*' (%x2A, ASTERISK).  The character '*' is a
+"wildcard" that matches any sequence of subtags.  The meaning and uses of
+wildcards vary according to the type of language range.
+
+> Language tags and thus language ranges are to be treated as case- insensitive:
+there exist conventions for the capitalization of some of the subtags, but
+these MUST NOT be taken to carry meaning.  Matching of language tags to
+language ranges MUST be done in a case- insensitive manner.
+
+##### 2.1  Basic Language Range
+
+> A "basic language range" has the same syntax as an [RFC3066] language tag or is
+the single character "\*".  The basic language range was originally described by
+HTTP/1.1 [RFC2616] and later [RFC3066].  It is defined by the following ABNF
+[RFC4234]:
+
+<pre>
+language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+alphanum         = ALPHA / DIGIT
+</pre>
+
+> A basic language range differs from the language tags defined in [RFC4646] only
+in that there is no requirement that it be "well- formed" or be validated
+against the IANA Language Subtag Registry.  Such ill-formed ranges will
+probably not match anything.  Note that the ABNF [RFC4234] in [RFC2616] is
+incorrect, since it disallows the use of digits anywhere in the
+'language-range' (see [RFC2616errata]).
+
+##### 2.2  Extended Language Range
+
+> Occasionally, users will wish to select a set of language tags based on the
+presence of specific subtags.  An "extended language range" describes a user's
+language preference as an ordered sequence of subtags.  For example, a user
+might wish to select all language tags that contain the region subtag 'CH'
+(Switzerland).  Extended language ranges are useful for specifying a particular
+sequence of subtags that appear in the set of matching tags without having to
+specify all of the intervening subtags.
+
+> An extended language range can be represented by the following ABNF:
+
+<pre>
+extended-language-range = (1*8ALPHA / "*")
+			  *("-" (1*8alphanum / "*"))
+</pre>
+
+> The wildcard subtag '\*' can occur in any position in the extended language
+range, where it matches any sequence of subtags that might occur in that
+position in a language tag.  However, wildcards outside the first position are
+ignored by Extended Filtering (see Section 3.2.2).  The use or absence of one
+or more wildcards cannot be taken to imply that a certain number of subtags
+will appear in the matching set of language tags.
+
+##### 2.3  The Language Priority List
+
+Example:
+> A speaker of Breton in France, for example, can specify "br" followed by "fr",
+meaning that if Breton is available, it is preferred, but otherwise French is
+the best alternative.
+
+Refers to RFC2616 and RFC3282.
+
+> A simple list of ranges is considered to be in descending order of priority.
+Other language priority lists provide "quality weights" for the language ranges
+in order to specify the relative priority of the user's language preferences.
+An example of this is the use of "q" values in the syntax of the
+"Accept-Language" header (defined in [RFC2616], Section 14.4, and [RFC3282]).
+
+
+### RFC3282
+
+#### The Accept-Language header
+
+<blockquote>
+The "Accept-Language" header is intended for use in cases where a user or a
+process desires to identify the preferred language(s) when RFC 822-like
+headers, such as MIME body parts or Web documents, are used.
+
+The RFC 822 EBNF of the Accept-Language header is:
+
+<pre>
+Accept-Language = "Accept-Language" ":"
+		       1#( language-range [ ";" "q" "=" qvalue ] )
+</pre>
+
+A slightly more restrictive RFC 2234 ABNF definition is:
+
+<pre>
+Accept-Language = "Accept-Language:" [CFWS] language-q
+		  *( "," [CFWS] language-q )
+language-q = language-range [";" [CFWS] "q=" qvalue ] [CFWS]
+qvalue         = ( "0" [ "." 0*3DIGIT ] )
+	       / ( "1" [ "." 0*3("0") ] )
+</pre>
+
+A more liberal RFC 2234 ABNF definition is:
+
+<pre>
+Obs-accept-language = "Accept-Language" *WSP ":" [CFWS]
+	 obs-language-q *( "," [CFWS] obs-language-q ) [CFWS]
+obs-language-q = language-range
+	   [ [CFWS] ";" [CFWS] "q" [CFWS] "=" qvalue ]
+</pre>
+
+Like RFC 2822, this specification says that conforming implementations MUST
+accept the obs-accept-language syntax, but MUST NOT generate it; all generated
+messages MUST conform to the Accept- Language syntax.
+
+The syntax and semantics of language-range is defined in [TAGS].  The
+Accept-Language header may list several language-ranges in a comma- separated
+list, and each may include a quality value Q.  If no Q values are given, the
+language-ranges are given in priority order, with the leftmost language-range
+being the most preferred language; this is an extension to the HTTP/1.1 rules,
+but matches current practice.
+
+If Q values are given, refer to HTTP/1.1 [RFC 2616] for the details on how to
+evaluate it.
+</blockquote>

@@ -18,12 +18,14 @@ the best alternative.'
 and really, the whole idea of a priority list.
 
 Unless the ordering in the server's offers is seen as more important than the
-user's priority list, but I don't see any support for this in the RFCs.
+user's priority list, but I don't see any support for that in the RFCs.
 
 
 ## To-dos
 
-* RFC7231, Section 5.3.1, on quality values:
+### RFC7231
+
+* Section 5.3.1, on quality values:
 	* "The same parameter name is often used within server configurations
 	  to assign a weight to the relative quality of the various
 	  representations that can be selected for a resource." Related to
@@ -38,7 +40,7 @@ user's priority list, but I don't see any support for this in the RFCs.
 	  "HTTP/1.1 applications MUST NOT generate more than three digits after
 	  the decimal point. User configuration of these values SHOULD also be
 	  limited in this fashion.'
-* RFC7231, Section 5.3.5:
+* Section 5.3.5:
 	* "Some recipients treat the order in which language tags are listed as
 	  an indication of descending priority, particularly for tags that are
 	  assigned equal quality values (no value is the same as q=1). However,
@@ -61,26 +63,111 @@ user's priority list, but I don't see any support for this in the RFCs.
 	  schemes in RFC4647. If I remember right, the filtering schemes work
 	  one way, and lookup works the opposite way. Which one(s) sound like
 	  the one in this example?
-* RFC5646, Section 4.2:
+
+### RFC5646
+
+* Section 4.2:
 	* "Languages that begin with the same sequence of subtags are NOT
 	  guaranteed to be mutually intelligible." So a matching scheme that
 	  matches a language range with a language tag that is a prefix of the
 	  language range should not be implemented as the default scheme? (But
 	  rather as an option?)
-* RFC5646, Section 4.3:
+* Section 4.3:
 	* "In some applications, a single content item might best be associated
 	  with more than one language tag. Examples of such a usage
 	  include:..." Examples of use cases where `.best_match()` does not
 	  suffice?
-* RFC4647, Section 2.2:
+
+### RFC4647
+
+* Section 2.2:
 	* "...wildcards outside the first position are ignored by Extended
 	  Filtering (see Section 3.2.2)."
 	* "The use or absence of one or more wildcards cannot be taken to imply
 	  that a certain number of subtags will appear in the matching set of
-	  language tags." Not sure what this means. I think it follows from the
-	  way Extended Filtering ignores wildcards outside the first position,
-	  where it drops those positions and shifts all following subtags up a
-	  position? (Check how Extended Filtering works.)
+	  language tags." This is not very clear, but seems to be referring to
+	  the consequence of the way an extended language range is mapped to a
+	  basic language range (RFC4647, Section 3.2) (e.g. "en-*-US" maps to
+	  "en-US"), and the way Extended Filtering ignores wildcards outside
+	  the first position, where it drops those positions and shifts all
+	  following subtags up a position?  (Check how Extended Filtering
+	  works.)
+* Section 3:
+	* 'There are two types of matching scheme in this document.  A matching
+	  scheme that produces zero or more matching language tags is called
+	  "filtering".  A matching scheme that produces exactly one match for a
+	  given request is called "lookup".' So WebOb cannot be using any kind
+	  of filtering for `.best_match()`?
+* Section 3.1:
+	* "Filtering can be used to produce a set of results..." "Lookup
+	  produces the single result that best matches the user's preferences
+	  from the list of available tags, so it is useful in cases in which a
+	  single item is required (and for which only a single item can be
+	  returned)."
+* Section 3.2:
+	* "Applications, protocols, or specifications, in addressing their
+	  particular requirements, can offer pre-processing or configuration
+	  options.  For example, an implementation could allow a user to
+	  associate or map a particular language range to a different value.
+	  Such a user might wish to associate the language range subtags 'nn'
+	  (Nynorsk Norwegian) and 'nb' (Bokmal Norwegian) with the more general
+	  subtag 'no' (Norwegian).  Or perhaps a user would want to associate
+	  requests for the range "zh-Hans" (Chinese as written in the
+	  Simplified script) with content bearing the language tag "zh-CN"
+	  (Chinese as used in China, where the Simplified script is
+	  predominant).  Documentation on how the ranges or tags are altered,
+	  prioritized, or compared in the subsequent match in such an
+	  implementation will assist users in making these types of
+	  configuration choices." Is this related to WebOb's use of
+	  `server_quality`?
+* Section 3:
+	* 'Filtering is used to select the set of language tags that matches a
+	  given language priority list.  It is called "filtering" because this
+	  set might contain no items at all or it might return an arbitrarily
+	  large number of matching items: as many items as match the language
+	  priority list, thus "filtering out" the non-matching items.
+	  
+	  In filtering, each language range represents the least specific
+	  language tag (that is, the language tag with fewest number of
+	  subtags) that is an acceptable match.  All of the language tags in
+	  the matching set of tags will have an equal or greater number of
+	  subtags than the language range.  Every non-wildcard subtag in the
+	  language range will appear in every one of the matching language
+	  tags.  For example, if the language priority list consists of the
+	  range "de-CH" (German as used in Switzerland), one might see tags
+	  such as "de-CH-1996" (German as used in Switzerland, orthography of
+	  1996) but one will never see a tag such as "de" (because the 'CH'
+	  subtag is missing).
+	  
+	  If the language priority list (see Section 2.3) contains more than
+	  one range, the content returned is typically ordered in descending
+	  level of preference, but it MAY be unordered, according to the needs
+	  of the application or protocol.'
+
+	  This is the behaviour we were expecting in the issue. The matching
+	  scheme used by `.best_match()` does not appear to be any kind of
+	  filtering.
+* Section 3.3.1:
+	* Details on Basic Filtering.
+	* 'The special range "\*" in a language priority list matches any tag.
+	  A protocol that uses language ranges MAY specify additional rules
+	  about the semantics of "\*"; for instance, HTTP/1.1 [RFC2616]
+	  specifies that the range "\*" matches only languages not matched by
+	  any other range within an "Accept-Language" header.' Does this
+	  require more thought? (So, "\*" would mean every language tag (i.e.
+	  every item in `offers`) not already matched?)
+* Section 3.3.2:
+	* Details on Extended Filtering, including algorithm and examples.
+	* The note at the end, of why a wildcard in the extended language range
+	  is significant in the first position but ignored in all other
+	  positions, is part of reason why I'm thinking the Accept classes
+	  shouldn't share parsing code, as elements like "*" require different
+	  handling for different headers.
+* Section 3.4:
+	* Details on Lookup, including algorithm and examples.
+	* This is the matching scheme that would most closely matches a
+	  `.best_match()`.
+
 
 * In `.best_match` docstring: "If two matches have equal weight, then the one
   that shows up first in the `offers` list will be returned." Why follow the
@@ -326,6 +413,175 @@ Other language priority lists provide "quality weights" for the language ranges
 in order to specify the relative priority of the user's language preferences.
 An example of this is the use of "q" values in the syntax of the
 "Accept-Language" header (defined in [RFC2616], Section 14.4, and [RFC3282]).
+
+#### 3.  Types of Matching
+
+> Matching language ranges to language tags can be done in many different ways.
+This section describes three such matching schemes, as well as the
+considerations for choosing between them.  Protocols and specifications
+requiring conformance to this specification MUST clearly indicate the
+particular mechanism used in selecting or matching language tags.
+
+Which RFC7231 doesn't...
+
+> There are two types of matching scheme in this document.  A matching scheme
+that produces zero or more matching language tags is called "filtering".  A
+matching scheme that produces exactly one match for a given request is called
+"lookup".
+
+##### 3.1.  Choosing a Matching Scheme
+
+> Filtering can be used to produce a set of results... Lookup produces the single
+result that best matches the user's preferences from the list of available
+tags, so it is useful in cases in which a single item is required (and for
+which only a single item can be returned).
+
+##### 3.2.  Implementation considerations
+
+<blockquote>
+Applications, protocols, or specifications that use basic ranges might
+sometimes receive extended language ranges instead.  An application, protocol,
+or specification MUST choose to a) map extended language ranges to basic ranges
+using the algorithm below, b) reject any extended language ranges in the
+language priority list that are not valid basic language ranges, or c) treat
+each extended language range as if it were a basic language range, which will
+have the same result as ignoring them, since these ranges will not match any
+valid language tags.
+
+An extended language range is mapped to a basic language range as follows: if
+the first subtag is a '\*' then the entire range is treated as "\*", otherwise
+each wildcard subtag is removed.  For example, the extended language range
+"en-\*-US" maps to "en-US" (English, United States).
+</blockquote>
+
+<blockquote>
+Applications, protocols, or specifications, in addressing their particular
+requirements, can offer pre-processing or configuration options.  For example,
+an implementation could allow a user to associate or map a particular language
+range to a different value.  Such a user might wish to associate the language
+range subtags 'nn' (Nynorsk Norwegian) and 'nb' (Bokmal Norwegian) with the
+more general subtag 'no' (Norwegian).  Or perhaps a user would want to
+associate requests for the range "zh-Hans" (Chinese as written in the
+Simplified script) with content bearing the language tag "zh-CN" (Chinese as
+used in China, where the Simplified script is predominant).  Documentation on
+how the ranges or tags are altered, prioritized, or compared in the subsequent
+match in such an implementation will assist users in making these types of
+configuration choices. 
+
+##### 3.3  Filtering
+
+> Filtering is used to select the set of language tags that matches a given
+language priority list.  It is called "filtering" because this set might
+contain no items at all or it might return an arbitrarily large number of
+matching items: as many items as match the language priority list, thus
+"filtering out" the non-matching items.
+
+<blockquote>
+In filtering, each language range represents the least specific language tag
+(that is, the language tag with fewest number of subtags) that is an acceptable
+match.  All of the language tags in the matching set of tags will have an equal
+or greater number of subtags than the language range.  Every non-wildcard
+subtag in the language range will appear in every one of the matching language
+tags.  For example, if the language priority list consists of the range "de-CH"
+(German as used in Switzerland), one might see tags such as "de-CH-1996"
+(German as used in Switzerland, orthography of 1996) but one will never see a
+tag such as "de" (because the 'CH' subtag is missing).
+
+If the language priority list (see Section 2.3) contains more than one range,
+the content returned is typically ordered in descending level of preference,
+but it MAY be unordered, according to the needs of the application or protocol.
+</blockquote>
+
+Some examples of applications where filtering might be appropriate.
+
+> Filtering seems to imply that there is a semantic relationship between language
+tags that share the same prefix.  While this is often the case, it is not
+always true: the language tags that match a specific language range do not
+necessarily represent mutually intelligible languages.
+
+###### 3.3.1.  Basic Filtering
+
+> Basic filtering compares basic language ranges to language tags.  Each basic
+language range in the language priority list is considered in turn, according
+to priority.  A language range matches a particular language tag if, in a
+case-insensitive comparison, it exactly equals the tag, or if it exactly equals
+a prefix of the tag such that the first character following the prefix is "-".
+For example, the language-range "de-de" (German as used in Germany) matches the
+language tag "de-DE-1996" (German as used in Germany, orthography of 1996), but
+not the language tags "de-Deva" (German as written in the Devanagari script) or
+"de-Latn-DE" (German, Latin script, as used in Germany).
+
+> The special range "\*" in a language priority list matches any tag.  A protocol
+that uses language ranges MAY specify additional rules about the semantics of
+"\*"; for instance, HTTP/1.1 [RFC2616] specifies that the range "\*" matches
+only languages not matched by any other range within an "Accept-Language"
+header.
+
+###### 3.3.2.  Extended Filtering
+
+> Extended filtering compares extended language ranges to language tags.  Each
+extended language range in the language priority list is considered in turn,
+according to priority.  A language range matches a particular language tag if
+each respective list of subtags matches.
+
+Algorithm for extended filtering, and examples. (In Step A, "move to the next
+subtag in the range" --- does that mean move to the next corresponding subtag
+in the tag too?  Seems unclear. But from the example of "de-\*-DE" matching
+"de-DE", it seems we move to the next subtag in the range, but remain in the
+same position in the language tag. See also the end of step 2, where "move to
+the next subtag" is specified for "both the range and the tag". And stepping
+through the example of "de-Latn-DE", it would seem that we only move forward on
+one side of the comparison (which is also done in step E, but for the language
+list).)
+
+So from what I understand, the extended language range "de-\*-DE", 'or its
+synonym "de-DE"', would match "de-DE", "de-Latn-DE", and "de-Latn-Latn-DE" (not
+a real tag, just illustrating the point).
+
+> Note: [RFC4646] defines each type of subtag (language, script, region, and so
+forth) according to position, size, and content.  This means that subtags in a
+language range can only match specific types of subtags in a language tag.  For
+example, a subtag such as 'Latn' is always a script subtag (unless it follows a
+singleton) while a subtag such as 'nedis' can only match the equivalent variant
+subtag.  Two-letter subtags in the initial position have a different type
+(language) than two-letter subtags in later positions (region).  This is the
+reason why a wildcard in the extended language range is significant in the
+first position but is ignored in all other positions.
+
+##### 3.4.  Lookup
+
+> Lookup is used to select the single language tag that best matches the language
+priority list for a given request.  When performing lookup, each language range
+in the language priority list is considered in turn, according to priority.  By
+contrast with filtering, each language range represents the most specific tag
+that is an acceptable match.  The first matching tag found, according to the
+user's priority, is considered the closest match and is the item returned.  For
+example, if the language range is "de-ch", a lookup operation can produce
+content with the tags "de" or "de-CH" but never content with the tag
+"de-CH-1996".  If no language tag matches the request, the "default" value is
+returned.
+
+Example applications of lookup.
+
+Algorithm.
+
+> In some cases, the language priority list can contain one or more extended
+language ranges (as, for example, when the same language priority list is used
+as input for both lookup and filtering operations).  Wildcard values in an
+extended language range normally match any value that can occur in that
+position in a language tag.  Since only one item can be returned for any given
+lookup request, wildcards in a language range have to be processed in a
+consistent manner or the same request will produce widely varying results.
+Applications, protocols, or specifications that accept extended language ranges
+MUST define which item is returned when more than one item matches the extended
+language range.
+
+I think the item that should be returned when more than one item matches the
+extended language range would be the first matching item in the `offers` list?
+The first suggestion in the next paragraph may be an option too: 
+
+> For example, an implementation could map the extended language ranges to basic
+ranges.
 
 
 ### RFC3282

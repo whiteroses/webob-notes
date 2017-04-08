@@ -17,7 +17,7 @@ the best alternative.'
 
 and really, the whole idea of a priority list.
 
-Unless the ordering in the server's offers are seen as more important than the
+Unless the ordering in the server's offers is seen as more important than the
 user's priority list, but I don't see any support for this in the RFCs.
 
 
@@ -72,7 +72,7 @@ user's priority list, but I don't see any support for this in the RFCs.
 	  with more than one language tag. Examples of such a usage
 	  include:..." Examples of use cases where `.best_match()` does not
 	  suffice?
-* RFC4647, Secion 2.2:
+* RFC4647, Section 2.2:
 	* "...wildcards outside the first position are ignored by Extended
 	  Filtering (see Section 3.2.2)."
 	* "The use or absence of one or more wildcards cannot be taken to imply

@@ -20,6 +20,84 @@ and really, the whole idea of a priority list.
 Unless the ordering in the server's offers is seen as more important than the
 user's priority list, but I don't see any support for that in the RFCs.
 
+From what I understand, all three matching schemes in RFC4647 would return
+"en-GB" (Filtering would return ["en-GB"], whereas Lookup would return
+"en-GB" --- they work in opposite directions, but happen to return largely the
+same result in this case, albeit that one returns a list and the other a
+string.)
+
+Mention example in RFC4647, Section 4.1.
+
+The Apache document on content negotiation linked to by raydeo says this:
+
+> For example, if a client requests documents with the language en-GB for British
+English, the server is not normally allowed by the HTTP/1.1 standard to match
+that against a document that is marked as simply en.
+
+Which appears to go against the result returned by the current implementation
+of WebOb's `.best_match()`. But I'm not sure where the HTTP/1.1 standard says
+this? Maybe it's referring to the version of Basic Filtering in RFC2616 (but
+then RFC2616's been obsoleted by RFC7231?)
+
+And Apache's document appears to be a server's overall content negotiation
+algorithm, whereas WebOb's `.accept_language.best_match()` should only concern
+itself with the `Accept-Language` header?
+
+So is `.best_match()` implementing the `Accept-Language` part of the Apache
+algorithm, and then choosing the best one from the set returned?
+
+Under "Language Negotiation Exceptions", towards the end of the paragraph
+starting "The server will also attempt...", the Apache document states re: not
+returning "en" that "This is necessary to maintain compliance with the HTTP/1.1
+specification and to work effectively with properly configured clients." But
+the HTTP/1.1 standard is now RFC7231 (from what I understand), which mentions
+three possible matching schemes (and doesn't even seem that fussed about
+whether you MUST use those three schemes), of which Lookup seems much more
+suitable to the purpose of choosing one best variant, *and* would fall back to
+"en".
+
+Reading RFC2616, it specifies Basic Filtering (without the name) as the only
+matching scheme:
+
+> A language-range matches a language-tag if it exactly equals the tag, or if it
+exactly equals a prefix of the tag such that the first tag character following
+the prefix is "-".  The special range "\*", if present in the Accept-Language
+field, matches every tag not matched by any other range present in the
+Accept-Language field.
+
+With the example in the issue, the order in the `offers` argument matters (as
+we can see if we look at WebOb's implementation, though we have to check if
+that has been documented), so putting the more general tag of "en" before
+"en-GB" probably doesn't make sense, and could be said to be a mistake on the
+user's part. So I understand bertjwregeer's response. But that's only true if
+we're still on RFC2616 and have no choice but to use Basic Filtering, AND we
+use the ordering in `offers` as tie-breaker --- which I believe is not part of
+any HTTP/1.1 specification, 2616 or 7231? 2616 has this:
+
+> The language quality factor assigned to a language-tag by the Accept-Language
+field is the quality value of the longest language- range in the field that
+matches the language-tag. If no language- range in the field matches the tag,
+the language quality factor assigned is 0. If no Accept-Language header is
+present in the request, the server SHOULD assume that all languages are equally
+acceptable. If an Accept-Language header is present, then all languages which
+are assigned a quality factor greater than 0 are acceptable.
+
+Which is how 2616 orders and chooses the best matched tag.
+
+(Check if WebOb currently implements this (maybe Apache's version of it? Or
+some strange mix?))
+
+Note that in the paragraph on language quality factor, after the quality value
+of the longest language-range in the field that matches the language tag is
+assigned as the language quality factor for the language tag, there is no
+mention of how to break ties if two or more language tags have the same
+language quality factor. (It does not specify, for example, using the position
+of the language-range from which we got the language quality factor as a
+tie-breaker, which would make sense.)
+
+I am also unsure about how the multiplying in the Apache algorithm wouldn't
+lead to unexpected and unintuitive ordering.
+
 
 ## To-dos
 
@@ -318,8 +396,26 @@ language-range  =
   when a use understands a language with a certain tag, but not another
   language with another tag for which this tag is a prefix. (I believe this is
   possible -- check RFC4646?)
-* It's completely unclear what the language quality factor is. Not mentioned in
-  RFC7231 or RFC4647.
+* > The language quality factor assigned to a language-tag by the Accept-Language
+  field is the quality value of the longest language- range in the field that
+  matches the language-tag. If no language- range in the field matches the tag,
+  the language quality factor assigned is 0. If no Accept-Language header is
+  present in the request, the server SHOULD assume that all languages are
+  equally acceptable. If an Accept-Language header is present, then all
+  languages which are assigned a quality factor greater than 0 are acceptable.
+
+  I think this is about ordering the language tags after matching by assigning
+  to each (including those that didn't match any) a language quality factor.
+  And then choosing the best one? 2616 is strangely unclear on this. 
+
+  This paragraph may also explain why the implementation feels ok with dropping
+  the language ranges with 0 qvalues.
+  
+  Language quality factor is not mentioned in RFC7231 or RFC4647. In RFC4647,
+  it is made very clear that Basic Filtering returns a set (so no need to order
+  and choose the best one, and so no mention of any language quality factor.
+  This is where Basic Filtering differs between 7231/4647 and 2616, despite
+  7231 saying they are identical.
 
 
 ### RFC5646
@@ -646,3 +742,13 @@ but matches current practice.
 If Q values are given, refer to HTTP/1.1 [RFC 2616] for the details on how to
 evaluate it.
 </blockquote>
+
+
+## Apache document on content negotiation
+
+https://httpd.apache.org/docs/current/content-negotiation.html
+
+Which mentions qs parameters, related to RFC2295 and RFC2296? But they appear
+to be about transparent content negotiation?
+
+That looks to be where the `server_quality`/source quality is from.

@@ -98,16 +98,17 @@ tie-breaker, which would make sense.)
 I am also unsure about how the multiplying in the Apache algorithm wouldn't
 lead to unexpected and unintuitive ordering.
 
+Is the `.quality()` method actually about the language quality factor in 2616?
+
+Currently `Accept` does not take the media type parameters into account, as
+mentioned in https://github.com/pylons/pyramid/pull/1259.
+
 
 ## To-dos
 
 ### RFC7231
 
 * Section 5.3.1, on quality values:
-	* "The same parameter name is often used within server configurations
-	  to assign a weight to the relative quality of the various
-	  representations that can be selected for a resource." Related to
-	  `server_quality` in `.best_match()`?
 	* 'a value of 0 means "not acceptable"'. Is this information important?
 	  Is this information sometimes dropped by the current implementation?
 	* Are incoming qvalues validated to check that they are not more than

@@ -35,8 +35,15 @@
 * Read and understand the rest of RFCs on proactive negotiation.
 * Read and understand WebOb's current handling of Accept\* headers.
 * Write up current understanding of issues in WebOb.
-* Read and understand issues in Pyramid.
+* Read and understand issues in Pyramid. pyramid/config/views.py?
 
+
+## Pyramid
+
+* predicates.py, AcceptPredicate
+	* Uses WebOb's `in` to match?
+* config/views.py: MultiView.get_views()
+* httpexceptions.py, HTTPException uses WebOb's MIMEAccept
 
 
 * `Accept`
